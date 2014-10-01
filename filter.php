@@ -44,7 +44,46 @@ class filter_lectora extends moodle_text_filter {
     private $endofmodule;
 
     public function filter($text, array $options = array()) {
-        global $CFG, $PAGE;
+        global $CFG, $PAGE, $COURSE, $DB, $USER;
+
+
+        $pagecontext = $PAGE->context;
+
+        $activity = $PAGE->activityrecord;
+
+        $resourcecmid = $PAGE->context->__get('instanceid');
+
+        $thissection = 0;
+
+        $this->info = '';
+
+        $this->hascompletion = 0;
+
+        if ($DB->get_record('course_modules_completion', array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'viewed' => 1))) {
+            $DB->set_field('course_modules_completion', 'viewed', 0, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+        }
+
+        if (course_format_uses_sections($COURSE->format)) {
+            $modinfo = get_fast_modinfo($COURSE->id);
+            $sections = $modinfo->get_section_info_all();
+            $course = course_get_format($COURSE)->get_course();
+            $numsections = $course->numsections;
+            $completioninfo = new completion_info($COURSE);
+            for ($i = 0; $i <= $numsections; $i++) {
+                foreach ($modinfo->sections[$i] as $cmid) {
+                    if ($cmid == $resourcecmid) {
+                        $thissection = $i;
+                        $thismod = $modinfo->cms[$cmid];
+                        if ($completioninfo->is_enabled($thismod)) {
+                            $this->hascompletion = 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->returnurl = new moodle_url('/course/view.php', array('id' => $COURSE->id, 'section' => $thissection));
+
 
         if (!is_string($text) or empty($text)) {
             // non string data can not be filtered anyway
@@ -57,7 +96,8 @@ class filter_lectora extends moodle_text_filter {
         }
 
         if (stripos($text, 'end_of_lectora_module')) {
-            $this->endofmodule = html_writer::tag('a', 'Einde Module', array('class' => 'lectorabtn'));
+            $DB->set_field('course_modules_completion', 'viewed', 1, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+            $this->endofmodule = html_writer::link($this->returnurl, 'Einde Module', array('class' => 'lectorabtn'));
         } else {
             $this->endofmodule = '';
         }
@@ -74,7 +114,7 @@ class filter_lectora extends moodle_text_filter {
     }
 
     private function body_inject(array $matches) {
-        global $CFG, $OUTPUT, $COURSE;
+        global $CFG, $OUTPUT, $COURSE, $PAGE;
 
         $content = $matches[1];
 
@@ -85,13 +125,12 @@ class filter_lectora extends moodle_text_filter {
                     <nav role="navigation" class="navbar navbar-default">
                         <div class="container-fluid navbar-inner">
                             <a class="navbar-brand" href="'.$CFG->wwwroot.'"><img src="'.$OUTPUT->pix_url('logo', 'theme').'"></a>
-                            '.$OUTPUT->user_menu().'
                             '.$this->endofmodule.'
-
                         </div>
                     </nav>
                     <div class="contentback">
                     </div>
+
 
                     <div class="lectorapage">
                         '. $content . '
