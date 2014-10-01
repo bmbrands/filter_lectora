@@ -146,7 +146,7 @@ class filter_lectora extends moodle_text_filter {
 
         return '<head>
                 '. $content . '
-                <link rel="stylesheet" type="text/css" href="'. $CFG->wwwroot .'/theme/vermeer/style/lectora.css">
+                <link rel="stylesheet" type="text/css" href="'. $CFG->wwwroot .'/theme/malmberg/style/lectora.css">
                 </head>';
     }
 }
