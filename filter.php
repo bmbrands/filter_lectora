@@ -62,20 +62,21 @@ class filter_lectora extends moodle_text_filter {
         if ($DB->get_record('course_modules_completion', array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'viewed' => 1))) {
             $DB->set_field('course_modules_completion', 'viewed', 0, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
         }
-
-        if (course_format_uses_sections($COURSE->format)) {
-            $modinfo = get_fast_modinfo($COURSE->id);
-            $sections = $modinfo->get_section_info_all();
-            $course = course_get_format($COURSE)->get_course();
-            $numsections = $course->numsections;
-            $completioninfo = new completion_info($COURSE);
-            for ($i = 0; $i <= $numsections; $i++) {
-                foreach ($modinfo->sections[$i] as $cmid) {
-                    if ($cmid == $resourcecmid) {
-                        $thissection = $i;
-                        $thismod = $modinfo->cms[$cmid];
-                        if ($completioninfo->is_enabled($thismod)) {
-                            $this->hascompletion = 1;
+        if ($COURSE->id > 1) {
+            if (course_format_uses_sections($COURSE->format)) {
+                $modinfo = get_fast_modinfo($COURSE->id);
+                $sections = $modinfo->get_section_info_all();
+                $course = course_get_format($COURSE)->get_course();
+                $numsections = $course->numsections;
+                $completioninfo = new completion_info($COURSE);
+                for ($i = 0; $i <= $numsections; $i++) {
+                    foreach ($modinfo->sections[$i] as $cmid) {
+                        if ($cmid == $resourcecmid) {
+                            $thissection = $i;
+                            $thismod = $modinfo->cms[$cmid];
+                            if ($completioninfo->is_enabled($thismod)) {
+                                $this->hascompletion = 1;
+                            }
                         }
                     }
                 }
