@@ -44,8 +44,9 @@ class filter_lectora extends moodle_text_filter {
     private $endofmodule;
 
     public function filter($text, array $options = array()) {
-        global $CFG, $PAGE, $COURSE, $DB, $USER;
+        global $CFG, $PAGE, $COURSE, $DB, $USER, $SESSION;
 
+        unset($SESSION->completioncache);
 
         $resourcecmid = $PAGE->context->instanceid;
 
@@ -55,6 +56,10 @@ class filter_lectora extends moodle_text_filter {
 
         if ($DB->get_record('course_modules_completion', array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'viewed' => 1))) {
             $DB->set_field('course_modules_completion', 'viewed', 0, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+           
+        }
+        if ($DB->get_record('course_modules_completion', array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'completionstate' => 1))) {
+            $DB->set_field('course_modules_completion', 'completionstate', 0, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
         }
         if ($COURSE->id > 1) {
             if (course_format_uses_sections($COURSE->format)) {
@@ -96,6 +101,7 @@ class filter_lectora extends moodle_text_filter {
         if (stripos($text, 'lectora_module_completed') && $hascompletion ) {
             $text = str_replace('alt=lectora_module_completed', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
             $DB->set_field('course_modules_completion', 'viewed', 1, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+            $DB->set_field('course_modules_completion', 'completionstate', 1, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
             $this->endofmodule = html_writer::link($this->returnurl, 'Einde Module', array('class' => 'lectorabtn'));
         } else {
             $this->endofmodule = '';
