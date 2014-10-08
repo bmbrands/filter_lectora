@@ -47,17 +47,11 @@ class filter_lectora extends moodle_text_filter {
         global $CFG, $PAGE, $COURSE, $DB, $USER;
 
 
-        $pagecontext = $PAGE->context;
-
-        $activity = $PAGE->activityrecord;
-
-        $resourcecmid = $PAGE->context->__get('instanceid');
+        $resourcecmid = $PAGE->context->instanceid;
 
         $thissection = 0;
 
-        $this->info = '';
-
-        $this->hascompletion = 0;
+        $hascompletion = 0;
 
         if ($DB->get_record('course_modules_completion', array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'viewed' => 1))) {
             $DB->set_field('course_modules_completion', 'viewed', 0, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
@@ -70,12 +64,15 @@ class filter_lectora extends moodle_text_filter {
                 $numsections = $course->numsections;
                 $completioninfo = new completion_info($COURSE);
                 for ($i = 0; $i <= $numsections; $i++) {
+                    if (!isset($modinfo->sections[$i])) {
+                        continue;
+                    }
                     foreach ($modinfo->sections[$i] as $cmid) {
                         if ($cmid == $resourcecmid) {
                             $thissection = $i;
                             $thismod = $modinfo->cms[$cmid];
                             if ($completioninfo->is_enabled($thismod)) {
-                                $this->hascompletion = 1;
+                                $hascompletion = 1;
                             }
                         }
                     }
@@ -96,12 +93,18 @@ class filter_lectora extends moodle_text_filter {
             return $text;
         }
 
-        if (stripos($text, 'end_of_lectora_module')) {
+        if (stripos($text, 'lectora_module_completed') && $hascompletion ) {
+            $text = str_replace('alt=lectora_module_completed', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
             $DB->set_field('course_modules_completion', 'viewed', 1, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
             $this->endofmodule = html_writer::link($this->returnurl, 'Einde Module', array('class' => 'lectorabtn'));
         } else {
             $this->endofmodule = '';
         }
+
+        $endlink = '/<IMG\send_of_lectora_module.*>/Uis';
+
+
+        $text = str_replace('alt=end_of_lectora_module', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
 
         $body = '/<body\s.*>(.*)<\/body>/Uis';
 
@@ -112,6 +115,10 @@ class filter_lectora extends moodle_text_filter {
         $content = preg_replace_callback($head, array($this,'head_inject'), $newtext);
 
         return $content;
+    }
+
+    private function end_link(array $matches) {
+        return '<A href=' . $this->returnurl . '>' . $matches[0] . '</A>';
     }
 
     private function body_inject(array $matches) {
@@ -126,15 +133,12 @@ class filter_lectora extends moodle_text_filter {
                     <nav role="navigation" class="navbar navbar-default">
                         <div class="container-fluid navbar-inner">
                             <a class="navbar-brand" href="'.$CFG->wwwroot.'"><img src="'.$OUTPUT->pix_url('logo', 'theme').'"></a>
-                            '.$this->endofmodule.'
                         </div>
                     </nav>
                     <div class="contentback">
-                    </div>
-
-
-                    <div class="lectorapage">
-                        '. $content . '
+                        <div class="lectorapage">
+                            '. $content . '
+                        </div>
                     </div>
                 </body>';
     }
