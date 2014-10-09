@@ -112,8 +112,6 @@ class filter_lectora extends moodle_text_filter {
             $this->endofmodule = '';
         }
 
-        $endlink = '/<IMG\send_of_lectora_module.*>/Uis';
-
         $text = str_replace('alt=end_of_lectora_module', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
 
         $body = '/<body\s.*>(.*)<\/body>/Uis';
