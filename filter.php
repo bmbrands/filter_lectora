@@ -54,12 +54,15 @@ class filter_lectora extends moodle_text_filter {
 
         $hascompletion = 0;
 
-        if ($DB->get_record('course_modules_completion', array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'viewed' => 1))) {
-            $DB->set_field('course_modules_completion', 'viewed', 0, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
-           
+        if ($DB->get_record('course_modules_completion',
+            array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'viewed' => 1))) {
+            $DB->set_field('course_modules_completion', 'viewed', 0,
+                array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
         }
-        if ($DB->get_record('course_modules_completion', array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'completionstate' => 1))) {
-            $DB->set_field('course_modules_completion', 'completionstate', 0, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+        if ($DB->get_record('course_modules_completion',
+            array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'completionstate' => 1))) {
+            $DB->set_field('course_modules_completion', 'completionstate', 0,
+                array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
         }
         if ($COURSE->id > 1) {
             if (course_format_uses_sections($COURSE->format)) {
@@ -87,9 +90,8 @@ class filter_lectora extends moodle_text_filter {
 
         $this->returnurl = new moodle_url('/course/view.php', array('id' => $COURSE->id, 'section' => $thissection));
 
-
         if (!is_string($text) or empty($text)) {
-            // non string data can not be filtered anyway
+            // Non string data can not be filtered anyway.
             return $text;
         }
 
@@ -100,25 +102,27 @@ class filter_lectora extends moodle_text_filter {
 
         if (stripos($text, 'lectora_module_completed') && $hascompletion ) {
             $text = str_replace('alt=lectora_module_completed', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
-            $DB->set_field('course_modules_completion', 'viewed', 1, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
-            $DB->set_field('course_modules_completion', 'completionstate', 1, array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
-            $this->endofmodule = html_writer::link($this->returnurl, 'Einde Module', array('class' => 'lectorabtn'));
+            $DB->set_field('course_modules_completion', 'viewed', 1,
+                array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+            $DB->set_field('course_modules_completion', 'completionstate', 1,
+                array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+            $this->endofmodule = html_writer::link($this->returnurl, 'Einde Module',
+                array('class' => 'lectorabtn'));
         } else {
             $this->endofmodule = '';
         }
 
         $endlink = '/<IMG\send_of_lectora_module.*>/Uis';
 
-
         $text = str_replace('alt=end_of_lectora_module', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
 
         $body = '/<body\s.*>(.*)<\/body>/Uis';
 
-        $newtext = preg_replace_callback($body, array($this,'body_inject'), $text);
+        $newtext = preg_replace_callback($body, array($this, 'body_inject'), $text);
 
         $head = '/<head>(.*)<\/head>/Uis';
 
-        $content = preg_replace_callback($head, array($this,'head_inject'), $newtext);
+        $content = preg_replace_callback($head, array($this, 'head_inject'), $newtext);
 
         return $content;
     }
