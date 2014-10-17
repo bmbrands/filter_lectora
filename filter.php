@@ -102,6 +102,7 @@ class filter_lectora extends moodle_text_filter {
 
         if (stripos($text, 'lectora_module_completed') && $hascompletion ) {
             $text = str_replace('alt=lectora_module_completed', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
+            $text = str_replace('alt="lectora_module_completed"', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
             $DB->set_field('course_modules_completion', 'viewed', 1,
                 array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
             $DB->set_field('course_modules_completion', 'completionstate', 1,
