@@ -138,7 +138,7 @@ class filter_lectora extends moodle_text_filter {
 
         $backgroundlocation = $OUTPUT->pix_url('lectorabg', 'theme');
 
-        return '<body style="background: url('.$backgroundlocation.') repeat-y scroll center 0 transparent;">
+        return '<body>
                     <div id="page-content-wrapper">
                     <nav role="navigation" class="navbar navbar-default">
                         <div class="container-fluid navbar-inner">
