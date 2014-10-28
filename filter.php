@@ -46,6 +46,10 @@ class filter_lectora extends moodle_text_filter {
     public function filter($text, array $options = array()) {
         global $CFG, $PAGE, $COURSE, $DB, $USER, $SESSION;
 
+        if ($COURSE->id == 1) {
+            return $text;
+        }
+
         unset($SESSION->completioncache);
 
         $resourcecmid = $PAGE->context->instanceid;
@@ -54,34 +58,43 @@ class filter_lectora extends moodle_text_filter {
 
         $hascompletion = 0;
 
-        if ($DB->get_record('course_modules_completion',
-            array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'viewed' => 1))) {
-            $DB->set_field('course_modules_completion', 'viewed', 0,
-                array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+        $thispref = 'lectora_' . $COURSE->id . '_' . $resourcecmid;
+
+        $iscompleted = false;
+
+        if (get_user_preferences($thispref) == 1) {
+            $iscompleted = true;
         }
-        if ($DB->get_record('course_modules_completion',
-            array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'completionstate' => 1))) {
-            $DB->set_field('course_modules_completion', 'completionstate', 0,
-                array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+
+        if (!$iscompleted) {
+            if ($DB->get_record('course_modules_completion',
+                array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'viewed' => 1))) {
+                $DB->set_field('course_modules_completion', 'viewed', 0,
+                    array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+            }
+            if ($DB->get_record('course_modules_completion',
+                array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id, 'completionstate' => 1))) {
+                $DB->set_field('course_modules_completion', 'completionstate', 0,
+                    array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+            }
         }
-        if ($COURSE->id > 1) {
-            if (course_format_uses_sections($COURSE->format)) {
-                $modinfo = get_fast_modinfo($COURSE->id);
-                $sections = $modinfo->get_section_info_all();
-                $course = course_get_format($COURSE)->get_course();
-                $numsections = $course->numsections;
-                $completioninfo = new completion_info($COURSE);
-                for ($i = 0; $i <= $numsections; $i++) {
-                    if (!isset($modinfo->sections[$i])) {
-                        continue;
-                    }
-                    foreach ($modinfo->sections[$i] as $cmid) {
-                        if ($cmid == $resourcecmid) {
-                            $thissection = $i;
-                            $thismod = $modinfo->cms[$cmid];
-                            if ($completioninfo->is_enabled($thismod)) {
-                                $hascompletion = 1;
-                            }
+
+        if (course_format_uses_sections($COURSE->format)) {
+            $modinfo = get_fast_modinfo($COURSE->id);
+            $sections = $modinfo->get_section_info_all();
+            $course = course_get_format($COURSE)->get_course();
+            $numsections = $course->numsections;
+            $completioninfo = new completion_info($COURSE);
+            for ($i = 0; $i <= $numsections; $i++) {
+                if (!isset($modinfo->sections[$i])) {
+                    continue;
+                }
+                foreach ($modinfo->sections[$i] as $cmid) {
+                    if ($cmid == $resourcecmid) {
+                        $thissection = $i;
+                        $thismod = $modinfo->cms[$cmid];
+                        if ($completioninfo->is_enabled($thismod)) {
+                            $hascompletion = 1;
                         }
                     }
                 }
@@ -101,12 +114,15 @@ class filter_lectora extends moodle_text_filter {
         }
 
         if (stripos($text, 'lectora_module_completed') && $hascompletion ) {
+            set_user_preference($thispref, 1);
+
             $text = str_replace('alt=lectora_module_completed', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
             $text = str_replace('alt="lectora_module_completed"', 'onclick="location.href=\'' . $this->returnurl . '\'"', $text);
             $DB->set_field('course_modules_completion', 'viewed', 1,
                 array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
             $DB->set_field('course_modules_completion', 'completionstate', 1,
                 array('coursemoduleid' => $resourcecmid, 'userid' => $USER->id));
+            
             $this->endofmodule = html_writer::link($this->returnurl, 'Einde Module',
                 array('class' => 'lectorabtn'));
         } else {
