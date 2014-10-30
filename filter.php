@@ -113,6 +113,9 @@ class filter_lectora extends moodle_text_filter {
             return $text;
         }
 
+        // Fix for Safari close action
+        $text = str_replace('top.window.close();', '', $text);
+
         if (stripos($text, 'lectora_module_completed') && $hascompletion ) {
             set_user_preference($thispref, 1);
 
